@@ -27,6 +27,8 @@ class saphana(Plugin, RedHatPlugin):
     def setup(self):
 
         sids = []
+        self.limit = (None if self.get_option("all_logs")
+                      else self.get_option("log_size"))
 
         if os.path.isdir("/hana/shared"):
             s = os.listdir("/hana/shared")
@@ -80,5 +82,22 @@ class saphana(Plugin, RedHatPlugin):
                                     suggest_filename="%s_%s_landscapeConfig"
                                     % (sid, inst)
                                 )
+
+                            # Copy trace logs
+                            vthostname = self.call_ext_prog(
+                                '%s "echo $VTHOSTNAME"' % prefix
+                            )['output']
+
+                            trace_dir = (
+                                '/usr/sap/%s/HDB%s/%s/trace'
+                                % (sid, inst, vthostname)
+                            )
+
+                            if os.path.isdir(trace_dir):
+                                self.add_copy_spec(
+                                    trace_dir,
+                                    sizelimit=self.limit
+                                )
+
 
 # vim: et ts=4 sw=4
